@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>운동 칼로리 누적 계산기 (시간 단위, 10분 간격)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+  <style>
+    body { text-align: center; font-family: 'Noto Sans', sans-serif; margin-top: 80px; background-color: #f9f9f9;
+      background-image: url('exercise.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;
+      background-color: rgba(255,255,255,0.75); background-blend-mode: lighten; }
+    h2 { margin-bottom: 30px; font-size: 40px; color: #551B31; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
+    label { margin-right: 10px; font-weight: 500; font-size: 18px; }
+    input, select { font-family: 'Noto Sans', sans-serif; font-size: 16px; margin: 5px; padding: 6px 12px; border-radius: 12px; border: 3px solid #ccc; }
+    button { font-family: 'Noto Sans', sans-serif; font-size: 16px; margin: 10px; padding: 8px 10px; border-radius: 12px; background-color: #AA8D98; color: #fff; border: none; cursor: pointer; }
+    button:hover { background-color: #551B31; }
+    .content-box { background: rgba(255,255,255,0.95); padding: 30px 20px; margin: 0 auto 30px auto; max-width: 600px; border-radius: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); text-align: center; }
+    #result { width: 90%; max-width: 430px; margin: 15px auto; padding: 30px; background: rgba(255,255,255,0.9); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+    #result p { margin: 0; font-size: 16px; line-height: 2; }
+    #calorieChart { display: block; margin: 30px auto 0 auto; max-width: 100%; height: 300px; }
+  </style>
+</head>
+<body>
+  <h2>운동 칼로리 누적 계산기</h2>
+
+  <div class="content-box">
+    <div>
+      <label>운동 종류 선택:</label>
+      <select id="exercise">
+        <option value="squat">스쿼트 (0.5kcal)</option>
+        <option value="pushup">팔굽혀펴기 (0.7kcal)</option>
+        <option value="lunge">런지 (0.6kcal)</option>
+        <option value="plank">플랭크 (4kcal)</option>
+      </select>
+    </div>
+
+    <div>
+      <label>총 운동 시간 입력(분):</label>
+      <input type="number" id="minutes" placeholder="예: 120">
+      <button onclick="calcExercise()">계산하기</button>
+    </div>
+
+    <div id="result"></div>
+    <canvas id="calorieChart"></canvas>
+  </div>
+
+  <script>
+    let chartInstance = null;
+
+    function calcExercise() {
+      let totalMinutes = Number(document.getElementById("minutes").value);
+      let exercise = document.getElementById("exercise").value;
+
+      if (totalMinutes <= 0 || isNaN(totalMinutes)) {
+        document.getElementById("result").innerHTML = "<p>올바른 시간을 입력하세요!</p>";
+        return;
+      }
+
+      let caloriePerUnit = 0;
+      let exerciseName = "";
+
+      switch(exercise) {
+        case "squat":
+          caloriePerUnit = 0.5; exerciseName = "스쿼트"; break;
+        case "pushup":
+          caloriePerUnit = 0.7; exerciseName = "팔굽혀펴기"; break;
+        case "lunge":
+          caloriePerUnit = 0.6; exerciseName = "런지"; break;
+        case "plank":
+          caloriePerUnit = 4; exerciseName = "플랭크"; break;
+      }
+
+      let totalCalories = 0;
+      let labels = [];
+      let cumulativeCalories = [];
+
+      // 10분 단위로 계산
+      for (let i = 10; i <= totalMinutes; i += 10) {
+        let caloriesThisPeriod = caloriePerUnit * 10; // 10분 단위
+        totalCalories += caloriesThisPeriod;
+        labels.push(i + "분");
+        cumulativeCalories.push(totalCalories);
+      }
+
+      document.getElementById("result").innerHTML = `
+        <p>운동 종류: <b>${exerciseName}</b></p>
+        <p>총 운동 시간: <b>${totalMinutes}분</b></p>
+        <p>총 칼로리 소모량: <b>${totalCalories.toLocaleString()} kcal</b></p>
+      `;
+
+      let ctx = document.getElementById("calorieChart").getContext("2d");
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '누적 칼로리 소모량 (kcal)',
+            data: cumulativeCalories,
+            borderColor: '#AA8D98',
+            backgroundColor: 'rgba(170,141,152,0.2)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: { legend: { labels: { align: 'center', textAlign: 'center' } } },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: '칼로리 (kcal)', align: 'center' } },
+            x: { title: { display: true, text: '운동 시간 (분)', align: 'center' } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
